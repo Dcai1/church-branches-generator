@@ -3,7 +3,7 @@
    * Plugin Name: Church Branches and Programs Generator
    * Description: Create, edit, and manage pages for each branch location. Includes placeholders and Media Library integration.
    * Version: 1.7.0
-   * Author: David Cai, Pavansrivatsa Meka
+   * Author: David Cai, Pavansrivatsa Meka, Shanmukha Harshith
    * License: GPL-2.0+
    */
   
