@@ -35,7 +35,7 @@ class Church_Branches_Generator_Activator {
         ) $charset_collate;";
 
         // Table: wp_church_services
-        $services_table = $prefix . CHURCH_BRANCHES_GENERATOR_TABLE_PREFIX . 'church_services';
+        $services_table = $prefix . CHURCH_BRANCHES_GENERATOR_TABLE_PREFIX . 'services';
         $sql_services = "CREATE TABLE $services_table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             branch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
@@ -52,7 +52,7 @@ class Church_Branches_Generator_Activator {
         ) $charset_collate;";
 
         // Table: wp_church_programs
-        $programs_table = $prefix . CHURCH_BRANCHES_GENERATOR_TABLE_PREFIX . 'church_programs';
+        $programs_table = $prefix . CHURCH_BRANCHES_GENERATOR_TABLE_PREFIX . 'programs';
         $sql_programs = "CREATE TABLE $programs_table (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             branch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
