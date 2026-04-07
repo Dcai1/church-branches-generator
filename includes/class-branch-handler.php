@@ -20,6 +20,7 @@ class Church_Branches_Generator_Branch_Handler {
             'page_id'         => 0,
             'about_us_text'   => '',
             'directions_info' => '',
+            'language'        => 'english',
         );
 
         $data = wp_parse_args($data, $defaults);
@@ -36,8 +37,9 @@ class Church_Branches_Generator_Branch_Handler {
                 'page_id'         => intval($data['page_id']),
                 'about_us_text'   => wp_kses_post($data['about_us_text']),
                 'directions_info' => wp_kses_post($data['directions_info']),
+                'language'        => sanitize_text_field($data['language']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s')
         );
 
         if ($result === false) {
@@ -103,6 +105,10 @@ class Church_Branches_Generator_Branch_Handler {
         }
         if (isset($data['directions_info'])) {
             $fields['directions_info'] = wp_kses_post($data['directions_info']);
+            $formats[] = '%s';
+        }
+        if (isset($data['language'])) {
+            $fields['language'] = sanitize_text_field($data['language']);
             $formats[] = '%s';
         }
 

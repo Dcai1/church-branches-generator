@@ -2,6 +2,7 @@
 class Church_Branches_Generator_Activator {
     public static function activate() {
         self::create_tables();
+        self::migrate_existing_tables();
         flush_rewrite_rules();
     }
 
@@ -11,7 +12,6 @@ class Church_Branches_Generator_Activator {
         $charset_collate = $wpdb->get_charset_collate();
         $prefix = $wpdb->prefix;
 
-        // Include dbDelta for table creation/updates
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         // Table: wp_church_branches
@@ -27,11 +27,13 @@ class Church_Branches_Generator_Activator {
             page_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
             about_us_text TEXT NOT NULL,
             directions_info TEXT NOT NULL,
+            language VARCHAR(20) NOT NULL DEFAULT 'english',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY idx_branch_name (branch_name),
-            KEY idx_page_id (page_id)
+            KEY idx_page_id (page_id),
+            KEY idx_language (language)
         ) $charset_collate;";
 
         // Table: wp_church_services
@@ -71,12 +73,32 @@ class Church_Branches_Generator_Activator {
             KEY idx_program_order (program_order)
         ) $charset_collate;";
 
-        // Execute table creation
         dbDelta($sql_branches);
         dbDelta($sql_services);
         dbDelta($sql_programs);
 
-        // Store version for future migrations
-        update_option('church_branches_generator_db_version', '1.0.0');
+        update_option('church_branches_generator_db_version', '1.1.0');
+    }
+
+    private static function migrate_existing_tables() {
+        global $wpdb;
+        $branches_table = $wpdb->prefix . CHURCH_BRANCHES_GENERATOR_TABLE_PREFIX . 'branches';
+        
+        $current_version = get_option('church_branches_generator_db_version', '1.0.0');
+        
+        if (version_compare($current_version, '1.1.0', '<')) {
+            $column_exists = $wpdb->get_results($wpdb->prepare(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                 WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = 'language'",
+                DB_NAME, $branches_table
+            ));
+            
+            if (empty($column_exists)) {
+                $wpdb->query("ALTER TABLE $branches_table ADD COLUMN language VARCHAR(20) NOT NULL DEFAULT 'english' AFTER directions_info");
+                $wpdb->query("ALTER TABLE $branches_table ADD INDEX idx_language (language)");
+            }
+            
+            update_option('church_branches_generator_db_version', '1.1.0');
+        }
     }
 }

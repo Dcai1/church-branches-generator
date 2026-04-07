@@ -172,6 +172,7 @@ class Church_Branches_Generator_Admin {
             $meta['pastor'] = $branch_data['lead_pastor'];
             $meta['about_us'] = $branch_data['about_us_text'];
             $meta['directions_info'] = $branch_data['directions_info'];
+            $meta['language'] = isset($branch_data['language']) ? $branch_data['language'] : 'english';
             $meta['branch_id'] = $branch_data['id'];
             $meta['img_id'] = get_post_meta($edit_id, '_br_hero_id', true);
             $meta['img_url'] = wp_get_attachment_url($meta['img_id']);
@@ -210,6 +211,15 @@ class Church_Branches_Generator_Admin {
                     <tr>
                         <th scope="row"><label for="lead_pastor">Lead Pastor</label></th>
                         <td><input name="lead_pastor" id="lead_pastor" type="text" value="<?php echo isset($meta['pastor']) ? esc_attr($meta['pastor']) : ''; ?>" class="regular-text" placeholder="e.g. Pastor John Doe" required></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="language">Language</label></th>
+                        <td>
+                            <select name="language" id="language" required>
+                                <option value="english" <?php selected(isset($meta['language']) ? $meta['language'] : 'english', 'english'); ?>>English</option>
+                                <option value="yoruba" <?php selected(isset($meta['language']) ? $meta['language'] : 'english', 'yoruba'); ?>>Yoruba</option>
+                            </select>
+                        </td>
                     </tr>
                     <tr>
                         <th scope="row"><label for="hero_image">Hero Image</label></th>
@@ -252,86 +262,6 @@ class Church_Branches_Generator_Admin {
                 </table>
 
                 <?php if (!$edit_id): ?>
-                <?php 
-                $menus = wp_get_nav_menus(array('orderby' => 'name'));
-                $selected_menu_id = get_option('cbg_selected_menu_id', 0);
-                $churches_menu_item_id = get_option('cbg_churches_menu_item_id', 0);
-                ?>
-                <h3>Navigation Menu</h3>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row"><label for="add_to_menu">Add to Menu</label></th>
-                        <td>
-                            <label for="add_to_menu">
-                                <input type="checkbox" name="add_to_menu" id="add_to_menu" value="1" checked>
-                                Add branch to navigation menu
-                            </label>
-                            <p class="description">When enabled, this branch will be added to the selected menu under "Churches".</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="selected_menu_id">Select Menu</label></th>
-                        <td>
-                            <select name="selected_menu_id" id="selected_menu_id">
-                                <option value="0">-- Select a Menu --</option>
-                                <?php foreach ($menus as $menu): ?>
-                                    <option value="<?php echo esc_attr($menu->term_id); ?>" <?php selected($selected_menu_id, $menu->term_id); ?>>
-                                        <?php echo esc_html($menu->name); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <p class="description">Choose which menu to add branches to.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><label for="churches_menu_item_id">"Churches" Menu Item</label></th>
-                        <td>
-                            <select name="churches_menu_item_id" id="churches_menu_item_id">
-                                <option value="0">-- Select --</option>
-                                <?php
-                                if ($selected_menu_id > 0) {
-                                    $menu_items = wp_get_nav_menu_items($selected_menu_id);
-                                    if ($menu_items) {
-                                        foreach ($menu_items as $item) {
-                                            if ($item->menu_item_parent == 0) {
-                                                echo '<option value="' . esc_attr($item->db_id) . '" ' . selected($churches_menu_item_id, $item->db_id, false) . '>' . esc_html($item->title) . ' (ID: ' . $item->db_id . ')</option>';
-                                            }
-                                        }
-                                    }
-                                }
-                                ?>
-                            </select>
-                            <p class="description">Select the top-level "Churches" menu item. You must create this in <a href="<?php echo admin_url('nav-menus.php'); ?>" target="_blank">Appearance → Menus</a> first.</p>
-                        </td>
-                    </tr>
-                </table>
-                <script>
-                    jQuery(document).ready(function($) {
-                        $('#selected_menu_id').on('change', function() {
-                            var menu_id = $(this).val();
-                            var $churchesSelect = $('#churches_menu_item_id');
-                            
-                            if (menu_id > 0) {
-                                $.ajax({
-                                    url: '<?php echo admin_url('admin-ajax.php'); ?>',
-                                    type: 'POST',
-                                    data: {
-                                        action: 'cbg_get_menu_items',
-                                        menu_id: menu_id,
-                                        nonce: '<?php echo wp_create_nonce('cbg-menu-nonce'); ?>'
-                                    },
-                                    success: function(response) {
-                                        if (response.success) {
-                                            $churchesSelect.html('<option value="0">-- Select --</option>' + response.data);
-                                        }
-                                    }
-                                });
-                            } else {
-                                $churchesSelect.html('<option value="0">-- Select --</option>');
-                            }
-                        });
-                    });
-                </script>
                 <?php endif; ?>
 
                 <?php submit_button($edit_id ? 'Update Branch' : 'Create Branch', 'primary', 'cbg_submit_branch'); ?>
@@ -348,6 +278,7 @@ class Church_Branches_Generator_Admin {
         $email         = sanitize_email($_POST['email']);
         $service_times = sanitize_text_field($_POST['service_times']);
         $lead_pastor   = sanitize_text_field($_POST['lead_pastor']);
+        $language      = sanitize_text_field($_POST['language']);
         $about_us_text = isset($_POST['about_us_text']) ? wp_kses_post($_POST['about_us_text']) : '';
         $directions_info = isset($_POST['directions_info']) ? wp_kses_post($_POST['directions_info']) : '';
         $attachment_id = intval($_POST['branch_image_id'] ?? 0);
@@ -384,6 +315,7 @@ class Church_Branches_Generator_Admin {
                     'lead_pastor'   => $lead_pastor,
                     'about_us_text' => $about_us_text,
                     'directions_info' => $directions_info,
+                    'language'      => $language,
                 ));
 
                 if (is_wp_error($result)) {
@@ -432,6 +364,7 @@ class Church_Branches_Generator_Admin {
                 'page_id'         => $page_id,
                 'about_us_text'   => $about_us_text,
                 'directions_info' => $directions_info,
+                'language'        => $language,
             ));
 
             if (is_wp_error($branch_id)) {
@@ -446,70 +379,119 @@ class Church_Branches_Generator_Admin {
                 'post_content' => '[church_branch id="' . $branch_id . '"]',
             ));
 
-            $add_to_menu = isset($_POST['add_to_menu']) && $_POST['add_to_menu'] == '1';
-            $menu_notice = '';
-            
-            if ($add_to_menu) {
-                $form_selected_menu_id = intval($_POST['selected_menu_id'] ?? 0);
-                $form_churches_menu_item_id = intval($_POST['churches_menu_item_id'] ?? 0);
-                $menu_notice = $this->add_branch_to_menu($branch_id, $branch_name, $page_id, $form_selected_menu_id, $form_churches_menu_item_id);
-            }
+            $menu_notice = $this->add_branch_to_menu($branch_id, $branch_name, $page_id, $language);
 
             $link = get_permalink($page_id);
             echo '<div class="notice notice-success is-dismissible"><p>Branch created successfully! ' . $menu_notice . ' <a href="' . esc_url($link) . '" target="_blank">View Page</a></p></div>';
         }
     }
     
-    private function add_branch_to_menu($branch_id, $branch_name, $page_id, $selected_menu_id, $churches_menu_item_id) {
-        if ($selected_menu_id <= 0 || $churches_menu_item_id <= 0) {
-            return '<em>(Menu not selected)</em>';
-        }
-        
-        $menu_exists = wp_get_nav_menu_object($selected_menu_id);
-        if (!$menu_exists) {
-            return '<em>(Menu not found)</em>';
-        }
-        
-        $menu_items = wp_get_nav_menu_items($selected_menu_id);
-        $churches_item_found = false;
-        foreach ($menu_items as $item) {
-            if (intval($item->db_id) === $churches_menu_item_id) {
-                $churches_item_found = true;
-                break;
-            }
-        }
-        
-        if (!$churches_item_found) {
-            return '<em>(Churches menu item not found)</em>';
-        }
+    private function add_branch_to_menu($branch_id, $branch_name, $page_id, $language) {
+        $selected_menu_id = intval(get_option('cbg_menu_' . $language . '_id', 0));
+        $churches_menu_item_id = intval(get_option('cbg_churches_item_' . $language . '_id', 0));
+        $mobile_menu_id = intval(get_option('cbg_mobile_menu_' . $language . '_id', 0));
+        $mobile_churches_item_id = intval(get_option('cbg_mobile_churches_item_' . $language . '_id', 0));
         
         $branch_url = get_permalink($page_id);
         if (empty($branch_url) || $branch_url === home_url('/')) {
             return '<em>(Invalid page URL)</em>';
         }
         
-        foreach ($menu_items as $item) {
-            if ($item->url === $branch_url) {
-                return '<em>(Already in menu)</em>';
+        $messages = array();
+        
+        // Add to main menu
+        if ($selected_menu_id > 0 && $churches_menu_item_id > 0) {
+            $menu_exists = wp_get_nav_menu_object($selected_menu_id);
+            if ($menu_exists) {
+                $menu_items = wp_get_nav_menu_items($selected_menu_id);
+                $churches_item_found = false;
+                foreach ($menu_items as $item) {
+                    if (intval($item->db_id) === $churches_menu_item_id) {
+                        $churches_item_found = true;
+                        break;
+                    }
+                }
+                
+                if ($churches_item_found) {
+                    $already_exists = false;
+                    foreach ($menu_items as $item) {
+                        if ($item->url === $branch_url) {
+                            $already_exists = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$already_exists) {
+                        $item_id = wp_update_nav_menu_item($selected_menu_id, 0, array(
+                            'menu-item-object-id' => $branch_id,
+                            'menu-item-object' => 'custom',
+                            'menu-item-type' => 'custom',
+                            'menu-item-title' => $branch_name . ' Branch',
+                            'menu-item-url' => $branch_url,
+                            'menu-item-status' => 'publish',
+                            'menu-item-parent-id' => $churches_menu_item_id,
+                            'menu-item-classes' => 'cbg-branch-item cbg-lang-' . $language,
+                        ));
+                        
+                        if (!is_wp_error($item_id) && $item_id > 0) {
+                            $messages[] = 'Added to ' . esc_html(ucfirst($language)) . ' menu';
+                        }
+                    } else {
+                        $messages[] = 'Already in ' . esc_html(ucfirst($language)) . ' menu';
+                    }
+                }
             }
         }
         
-        $item_id = wp_update_nav_menu_item($selected_menu_id, 0, array(
-            'menu-item-object-id' => $branch_id,
-            'menu-item-object' => 'custom',
-            'menu-item-type' => 'custom',
-            'menu-item-title' => $branch_name . ' Branch',
-            'menu-item-url' => $branch_url,
-            'menu-item-status' => 'publish',
-            'menu-item-parent-id' => $churches_menu_item_id,
-            'menu-item-classes' => 'cbg-branch-item',
-        ));
-        
-        if (!is_wp_error($item_id) && $item_id > 0) {
-            return '<em>(Added to menu)</em>';
+        // Add to mobile menu
+        if ($mobile_menu_id > 0 && $mobile_churches_item_id > 0) {
+            $mobile_menu_exists = wp_get_nav_menu_object($mobile_menu_id);
+            if ($mobile_menu_exists) {
+                $mobile_menu_items = wp_get_nav_menu_items($mobile_menu_id);
+                $mobile_churches_found = false;
+                foreach ($mobile_menu_items as $item) {
+                    if (intval($item->db_id) === $mobile_churches_item_id) {
+                        $mobile_churches_found = true;
+                        break;
+                    }
+                }
+                
+                if ($mobile_churches_found) {
+                    $already_in_mobile = false;
+                    foreach ($mobile_menu_items as $item) {
+                        if ($item->url === $branch_url) {
+                            $already_in_mobile = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!$already_in_mobile) {
+                        $mobile_item_id = wp_update_nav_menu_item($mobile_menu_id, 0, array(
+                            'menu-item-object-id' => $branch_id,
+                            'menu-item-object' => 'custom',
+                            'menu-item-type' => 'custom',
+                            'menu-item-title' => $branch_name . ' Branch',
+                            'menu-item-url' => $branch_url,
+                            'menu-item-status' => 'publish',
+                            'menu-item-parent-id' => $mobile_churches_item_id,
+                            'menu-item-classes' => 'cbg-branch-item cbg-lang-' . $language . ' cbg-mobile',
+                        ));
+                        
+                        if (!is_wp_error($mobile_item_id) && $mobile_item_id > 0) {
+                            $messages[] = 'Added to ' . esc_html(ucfirst($language)) . ' mobile menu';
+                        }
+                    } else {
+                        $messages[] = 'Already in ' . esc_html(ucfirst($language)) . ' mobile menu';
+                    }
+                }
+            }
         }
         
-        return '<em>(Could not add to menu)</em>';
+        if (empty($messages)) {
+            return '<em>(No menus configured)</em>';
+        }
+        
+        return '<em>(' . implode(', ', $messages) . ')</em>';
     }
 
     public function render_branches_list() {
@@ -842,6 +824,21 @@ class Church_Branches_Generator_Admin {
         $secondary_color = get_option('cbg_secondary_color', '#005a87');
         $font_family = get_option('cbg_font_family', 'Arial, sans-serif');
 
+        $menus = wp_get_nav_menus(array('orderby' => 'name'));
+        
+        $languages = array('english', 'yoruba');
+        $language_labels = array('english' => 'English', 'yoruba' => 'Yoruba');
+        
+        $menu_settings = array();
+        foreach ($languages as $lang) {
+            $menu_settings[$lang] = array(
+                'menu_id' => get_option('cbg_menu_' . $lang . '_id', 0),
+                'churches_item_id' => get_option('cbg_churches_item_' . $lang . '_id', 0),
+                'mobile_menu_id' => get_option('cbg_mobile_menu_' . $lang . '_id', 0),
+                'mobile_churches_item_id' => get_option('cbg_mobile_churches_item_' . $lang . '_id', 0),
+            );
+        }
+
         ?>
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
@@ -879,8 +876,139 @@ class Church_Branches_Generator_Admin {
                     </tr>
                 </table>
 
+                <h2>Menu Settings by Language</h2>
+                <p class="description">Configure which menu to use for each language. Create "Churches" dropdown items in <a href="<?php echo admin_url('nav-menus.php'); ?>" target="_blank">Appearance → Menus</a> first.</p>
+                <table class="form-table">
+                    <?php foreach ($languages as $lang): ?>
+                        <tr>
+                            <th scope="row" colspan="2"><strong><?php echo esc_html($language_labels[$lang]); ?></strong></th>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="menu_<?php echo $lang; ?>_id">Menu</label></th>
+                            <td>
+                                <select name="menu_<?php echo $lang; ?>_id" id="menu_<?php echo $lang; ?>_id" class="cbg-menu-select" data-language="<?php echo $lang; ?>">
+                                    <option value="0">-- Select a Menu --</option>
+                                    <?php foreach ($menus as $menu): ?>
+                                        <option value="<?php echo esc_attr($menu->term_id); ?>" <?php selected($menu_settings[$lang]['menu_id'], $menu->term_id); ?>>
+                                            <?php echo esc_html($menu->name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="churches_item_<?php echo $lang; ?>_id">"Churches" Menu Item</label></th>
+                            <td>
+                                <select name="churches_item_<?php echo $lang; ?>_id" id="churches_item_<?php echo $lang; ?>_id" class="cbg-churches-select" data-language="<?php echo $lang; ?>">
+                                    <option value="0">-- Select --</option>
+                                    <?php
+                                    if ($menu_settings[$lang]['menu_id'] > 0) {
+                                        $menu_items = wp_get_nav_menu_items($menu_settings[$lang]['menu_id']);
+                                        if ($menu_items) {
+                                            foreach ($menu_items as $item) {
+                                                if ($item->menu_item_parent == 0) {
+                                                    echo '<option value="' . esc_attr($item->db_id) . '" ' . selected($menu_settings[$lang]['churches_item_id'], $item->db_id, false) . '>' . esc_html($item->title) . ' (ID: ' . $item->db_id . ')</option>';
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="mobile_menu_<?php echo $lang; ?>_id">Mobile Menu</label></th>
+                            <td>
+                                <select name="mobile_menu_<?php echo $lang; ?>_id" id="mobile_menu_<?php echo $lang; ?>_id" class="cbg-mobile-menu-select" data-language="<?php echo $lang; ?>">
+                                    <option value="0">-- Select a Menu --</option>
+                                    <?php foreach ($menus as $menu): ?>
+                                        <option value="<?php echo esc_attr($menu->term_id); ?>" <?php selected($menu_settings[$lang]['mobile_menu_id'], $menu->term_id); ?>>
+                                            <?php echo esc_html($menu->name); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <p class="description">Branch will also be added to this menu.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="mobile_churches_item_<?php echo $lang; ?>_id">Mobile "Churches" Menu Item</label></th>
+                            <td>
+                                <select name="mobile_churches_item_<?php echo $lang; ?>_id" id="mobile_churches_item_<?php echo $lang; ?>_id" class="cbg-mobile-churches-select" data-language="<?php echo $lang; ?>">
+                                    <option value="0">-- Select --</option>
+                                    <?php
+                                    if ($menu_settings[$lang]['mobile_menu_id'] > 0) {
+                                        $menu_items = wp_get_nav_menu_items($menu_settings[$lang]['mobile_menu_id']);
+                                        if ($menu_items) {
+                                            foreach ($menu_items as $item) {
+                                                if ($item->menu_item_parent == 0) {
+                                                    echo '<option value="' . esc_attr($item->db_id) . '" ' . selected($menu_settings[$lang]['mobile_churches_item_id'], $item->db_id, false) . '>' . esc_html($item->title) . ' (ID: ' . $item->db_id . ')</option>';
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table>
+
                 <?php submit_button('Save Settings', 'primary', 'cbg_save_settings'); ?>
             </form>
+            
+            <script>
+                jQuery(document).ready(function($) {
+                    $('.cbg-menu-select').on('change', function() {
+                        var lang = $(this).data('language');
+                        var menu_id = $(this).val();
+                        var $churchesSelect = $('#churches_item_' + lang + '_id');
+                        
+                        $churchesSelect.html('<option value="0">-- Select --</option>');
+                        
+                        if (menu_id > 0) {
+                            $.ajax({
+                                url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                                type: 'POST',
+                                data: {
+                                    action: 'cbg_get_menu_items',
+                                    menu_id: menu_id,
+                                    nonce: '<?php echo wp_create_nonce('cbg-menu-nonce'); ?>'
+                                },
+                                success: function(response) {
+                                    if (response.success) {
+                                        $churchesSelect.html('<option value="0">-- Select --</option>' + response.data);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    
+                    $('.cbg-mobile-menu-select').on('change', function() {
+                        var lang = $(this).data('language');
+                        var menu_id = $(this).val();
+                        var $churchesSelect = $('#mobile_churches_item_' + lang + '_id');
+                        
+                        $churchesSelect.html('<option value="0">-- Select --</option>');
+                        
+                        if (menu_id > 0) {
+                            $.ajax({
+                                url: '<?php echo admin_url('admin-ajax.php'); ?>',
+                                type: 'POST',
+                                data: {
+                                    action: 'cbg_get_menu_items',
+                                    menu_id: menu_id,
+                                    nonce: '<?php echo wp_create_nonce('cbg-menu-nonce'); ?>'
+                                },
+                                success: function(response) {
+                                    if (response.success) {
+                                        $churchesSelect.html('<option value="0">-- Select --</option>' + response.data);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+            </script>
         </div>
         <?php
     }
@@ -889,6 +1017,14 @@ class Church_Branches_Generator_Admin {
         update_option('cbg_primary_color', sanitize_hex_color($_POST['primary_color'] ?? '#0073aa'));
         update_option('cbg_secondary_color', sanitize_hex_color($_POST['secondary_color'] ?? '#005a87'));
         update_option('cbg_font_family', sanitize_text_field($_POST['font_family'] ?? 'Arial, sans-serif'));
+        
+        $languages = array('english', 'yoruba');
+        foreach ($languages as $lang) {
+            update_option('cbg_menu_' . $lang . '_id', intval($_POST['menu_' . $lang . '_id'] ?? 0));
+            update_option('cbg_churches_item_' . $lang . '_id', intval($_POST['churches_item_' . $lang . '_id'] ?? 0));
+            update_option('cbg_mobile_menu_' . $lang . '_id', intval($_POST['mobile_menu_' . $lang . '_id'] ?? 0));
+            update_option('cbg_mobile_churches_item_' . $lang . '_id', intval($_POST['mobile_churches_item_' . $lang . '_id'] ?? 0));
+        }
         
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved successfully!</p></div>';
     }

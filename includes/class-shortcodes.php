@@ -167,12 +167,15 @@ class Church_Branches_Generator_Shortcodes {
         $directions_html .= '</div>';
         $directions_html .= '</div>';
 
-        $hero_bg_style = "background:\n    linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),\n    url('{$hero_img_url}')\n      no-repeat center/cover;";
+        $hero_bg_style = "background: url('{$hero_img_url}') no-repeat center/cover;";
 
         $html = <<<HTML
 <main class="branch-page-wrapper">
     <section class="branch-hero" role="banner" style="{$hero_bg_style}">
-        <div class="hero-content">
+    </section>
+
+    <section class="branch-header">
+        <div class="branch-header-content">
             <h1>{$branch_name} State Branch</h1>
             <p>
                 The {$branch_name} State branch is a vibrant community of believers
