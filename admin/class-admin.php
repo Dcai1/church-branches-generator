@@ -933,6 +933,9 @@ class Church_Branches_Generator_Admin {
         $this->program_handler->delete_programs_by_branch($branch_id);
         $this->service_handler->delete_services_by_branch($branch_id);
 
+        // Remove branch from all menus
+        $this->remove_branch_from_menus($branch_id, $page_id);
+
         // Delete branch
         $result = $this->branch_handler->delete_branch($branch_id);
 
@@ -944,6 +947,24 @@ class Church_Branches_Generator_Admin {
         wp_delete_post($page_id, true);
 
         wp_send_json_success('Branch deleted successfully');
+    }
+
+    private function remove_branch_from_menus($branch_id, $page_id) {
+        $menus = wp_get_nav_menus(array('orderby' => 'name'));
+        $branch_url = get_permalink($page_id);
+
+        foreach ($menus as $menu) {
+            $menu_items = wp_get_nav_menu_items($menu->term_id);
+            if (!$menu_items) continue;
+
+            foreach ($menu_items as $item) {
+                if (isset($item->classes) && in_array('cbg-branch-item', (array)$item->classes)) {
+                    if (intval($item->object_id) === $branch_id || $item->url === $branch_url) {
+                        wp_delete_post($item->db_id, true);
+                    }
+                }
+            }
+        }
     }
 
     public function ajax_delete_service() {
