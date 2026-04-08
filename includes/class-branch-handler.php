@@ -11,15 +11,17 @@ class Church_Branches_Generator_Branch_Handler {
 
     public function create_branch($data) {
         $defaults = array(
-            'branch_name'     => '',
-            'address'         => '',
-            'phone'           => '',
-            'email'           => '',
-            'service_times'   => '',
-            'lead_pastor'     => '',
-            'page_id'         => 0,
-            'about_us_text'   => '',
-            'directions_info' => '',
+            'branch_name'         => '',
+            'address'             => '',
+            'phone'               => '',
+            'email'               => '',
+            'service_times'       => '',
+            'lead_pastor'         => '',
+            'page_id'             => 0,
+            'about_us_text'       => '',
+            'directions_info'     => '',
+            'language'            => 'english',
+            'branch_description' => '',
         );
 
         $data = wp_parse_args($data, $defaults);
@@ -27,17 +29,19 @@ class Church_Branches_Generator_Branch_Handler {
         $result = $this->wpdb->insert(
             $this->table_name,
             array(
-                'branch_name'     => sanitize_text_field($data['branch_name']),
-                'address'         => sanitize_text_field($data['address']),
-                'phone'           => sanitize_text_field($data['phone']),
-                'email'           => sanitize_email($data['email']),
-                'service_times'   => sanitize_text_field($data['service_times']),
-                'lead_pastor'     => sanitize_text_field($data['lead_pastor']),
-                'page_id'         => intval($data['page_id']),
-                'about_us_text'   => wp_kses_post($data['about_us_text']),
-                'directions_info' => wp_kses_post($data['directions_info']),
+                'branch_name'         => sanitize_text_field($data['branch_name']),
+                'address'             => sanitize_text_field($data['address']),
+                'phone'               => sanitize_text_field($data['phone']),
+                'email'               => sanitize_email($data['email']),
+                'service_times'       => sanitize_text_field($data['service_times']),
+                'lead_pastor'         => sanitize_text_field($data['lead_pastor']),
+                'page_id'             => intval($data['page_id']),
+                'about_us_text'       => wp_kses_post($data['about_us_text']),
+                'directions_info'     => wp_kses_post($data['directions_info']),
+                'language'            => sanitize_text_field($data['language']),
+                'branch_description'  => sanitize_text_field($data['branch_description']),
             ),
-            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s')
+            array('%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s')
         );
 
         if ($result === false) {
@@ -103,6 +107,14 @@ class Church_Branches_Generator_Branch_Handler {
         }
         if (isset($data['directions_info'])) {
             $fields['directions_info'] = wp_kses_post($data['directions_info']);
+            $formats[] = '%s';
+        }
+        if (isset($data['language'])) {
+            $fields['language'] = sanitize_text_field($data['language']);
+            $formats[] = '%s';
+        }
+        if (isset($data['branch_description'])) {
+            $fields['branch_description'] = sanitize_text_field($data['branch_description']);
             $formats[] = '%s';
         }
 

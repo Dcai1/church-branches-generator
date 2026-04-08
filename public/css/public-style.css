@@ -10,19 +10,21 @@
 :root {
   --text-color: #0b0f17;
   --muted-color: #4c5b6d;
+  --secondary-text-color: #484847;
   --bg: #f7f8fb;
   --card: #ffffff;
-  --primary: #d4a625;
-  --accent: #7b1f1f;
+  --primary: var(--cbg-primary, #d4a625);
+  --accent: var(--cbg-secondary, #7b1f1f);
   --radius: 14px;
-  --shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
-  --font-primary: "Inter", sans-serif;
-  --font-secondary: "Roboto", sans-serif;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --font-title: var(--cbg-title-font, "Inter", sans-serif);
+  --font-body: var(--cbg-body-font, "Inter", sans-serif);
 }
 
 body {
-  font-family: var(--font-primary);
+  font-family: var(--font-body);
   overflow-x: hidden;
+  background: #ffffff;
 }
 
 @media (min-width: 1200px) {
@@ -53,7 +55,7 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background: var(--bg);
+  background: #ffffff;
   color: var(--text-color);
   display: flex;
   flex-direction: column;
@@ -71,71 +73,73 @@ body {
 
 .branch-hero {
   position: relative;
-  width: 100vw;
+  width: 100%;
   min-height: 400px;
-  background:
-    linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
-    url("https://womenofconnections.org/testingsite/wp-content/uploads/2026/03/318b640e08877549ff0fd0796e94431e9cdf7f77-scaled.jpg")
-      no-repeat fixed center/cover;
-  background-attachment: fixed;
+  background: no-repeat center/cover;
+  background-attachment: scroll;
   display: flex;
   align-items: flex-end;
-  justify-content: flex-start;
-  padding: 3rem 2rem;
+  justify-content: center;
   flex-shrink: 0;
 }
 
-.branch-hero .hero-content {
-  position: relative;
-  color: #fff;
-  max-width: 600px;
+.branch-header {
+  width: 100%;
+  background: var(--card);
+  padding: 1rem 0;
+  border-bottom: 1px solid #f4f7ee;
 }
 
-.branch-hero h1 {
-  font-size: 56px;
-  margin: 0 0 0.6rem 0;
-  line-height: 1.1;
-  font-weight: 600;
-  font-family: var(--font-primary);
+.branch-header-content {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.branch-header h1 {
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+  font-weight: 700;
+  font-family: var(--font-title);
+  color: var(--text-color);
   text-align: left;
 }
 
-.branch-hero p {
-  font-size: 1rem;
+.branch-header p {
+  font-size: 1.1rem;
   max-width: 100%;
   margin: 0;
-  color: #f1f1f1;
-  line-height: 1.5;
-  opacity: 0.85;
+  color: var(--muted-color);
+  line-height: 1.6;
   font-weight: 400;
-  font-family: var(--font-primary);
+  font-family: var(--font-body);
   text-align: left;
 }
 
 .branch-content {
   width: 100%;
-  max-width: 100%;
-  margin: 0;
+  max-width: 1140px;
+  margin: 0 auto;
   padding: 2rem;
   flex-grow: 1;
-  background: var(--bg);
 }
 
 .branch-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1rem;
 }
 
 .branch-card {
   background: var(--card);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1.8rem;
+  box-shadow: none;
+  padding: 1rem;
   border: none;
   display: flex;
   flex-direction: column;
-  font-family: var(--font-primary);
+  font-family: var(--font-body);
   gap: 1.5rem;
 }
 
@@ -174,6 +178,7 @@ body {
   margin: 0 0 1rem 0;
   font-weight: 700;
   color: var(--text-color);
+  font-family: var(--font-title);
 }
 
 .info-list {
@@ -183,13 +188,13 @@ body {
 }
 
 .info-item {
-  background: #fff;
-  border: 1px solid #e4e7ee;
+  background: #fafafa;
+  border: none;
   border-radius: 12px;
   padding: 1rem;
   min-height: 3%;
   display: grid;
-  box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   grid-template-columns: 42px 1fr;
   align-items: center;
   gap: 1rem;
@@ -211,13 +216,13 @@ body {
 .info-item h4 {
   font-size: 1.6rem;
   margin: 0;
-  color: #222;
+  color: #383837;
   font-weight: 500;
 }
 
 .info-item p {
   margin: 0;
-  color: var(--muted-color);
+  color: #70706D;
   font-size: 1.4rem;
   font-weight: 500;
 }
@@ -244,7 +249,7 @@ body {
   border-radius: var(--radius);
   padding: 1.25rem;
   margin-top: 1.25rem;
-  box-shadow: 0px 0px 10px 0px #731e1d;
+  box-shadow: 0 2px 8px rgba(123, 31, 29, 0.3);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -254,27 +259,27 @@ body {
   margin: 0 0 0.8rem 0;
   font-size: 1.6rem;
   font-weight: 400;
-  font-family: var(--font-secondary);
+  font-family: var(--font-title);
 }
 
 .service-row {
-  margin-top: 0.65rem;
+  margin-top: 0.6rem;
 }
 
 .service-row h4 {
-  margin: 0.15rem 0;
+  margin: 0 0 0.5rem 0 !important;
   font-size: 1.4rem;
   font-weight: 400;
   color: #fff;
-  font-family: var(--font-secondary);
+  font-family: var(--font-title);
 }
 
 .service-row p {
-  margin: 0;
+  margin: 0 0 0.5rem 0 !important;
   color: #f5e8e8;
   font-size: 1rem;
   font-weight: 400;
-  font-family: var(--font-secondary);
+  font-family: var(--font-body);
 }
 
 .service-day-time {
@@ -290,9 +295,9 @@ body {
   box-shadow: var(--shadow);
   text-align: center;
   padding: 7rem 0;
-  margin: 3rem 0 0 0;
+  margin: 1rem 0 0 0;
   border: none;
-  font-family: var(--font-primary);
+  font-family: var(--font-body);
 
   display: flex;
   flex-direction: column;
@@ -394,6 +399,11 @@ body {
   }
 
   .branch-card {
+    padding: 1.25rem;
+    gap: 1.5rem;
+  }
+  .branch-card p {
+    color: var(--secondary-text-color);
     padding: 1.25rem;
     gap: 1.5rem;
   }
@@ -516,7 +526,7 @@ body {
 }
 
 .directions-popup-content h2 {
-  font-family: "Inter", Sans-serif;
+  font-family: var(--font-title);
   margin: 0 0 1.5rem 0;
   font-size: 2rem;
   font-weight: 700;
