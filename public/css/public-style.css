@@ -222,7 +222,7 @@ body {
 
 .info-item p {
   margin: 0;
-  color: #70706D;
+  color: #70706d;
   font-size: 1.4rem;
   font-weight: 500;
 }
@@ -377,21 +377,41 @@ body {
   }
 
   .branch-hero {
-    height: auto;
-    min-height: 280px;
-    padding: 2rem 1.5rem;
-    background-attachment: scroll;
+    position: relative;
+    width: 100vw;
+    min-height: 400px;
+    /* this is the default background image that shows when no media is uploaded */
+    background:
+      linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
+      url("https://womenofconnections.org/testingsite/wp-content/uploads/2026/03/318b640e08877549ff0fd0796e94431e9cdf7f77-scaled.jpg")
+        no-repeat fixed center/cover;
+    background-attachment: fixed;
+    display: flex;
     align-items: flex-end;
     justify-content: flex-start;
+    padding: 3rem 2rem;
+    flex-shrink: 0;
   }
 
   .branch-hero h1 {
     font-size: 42px;
+    margin: 0 0 0.6rem 0;
+    line-height: 1.1;
+    font-weight: 600;
+    font-family: var(--font-primary);
+    text-align: left;
   }
 
   .branch-hero p {
     font-size: 0.9rem;
-    line-height: 1.4;
+    max-width: 100%;
+    margin: 0;
+    color: #f1f1f1;
+    line-height: 1.5;
+    opacity: 0.85;
+    font-weight: 400;
+    font-family: var(--font-primary);
+    text-align: left;
   }
 
   .branch-content {

@@ -85,12 +85,7 @@ class Church_Branches_Generator_Shortcodes {
             ARRAY_A
         );
 
-        // Fetch programs for this branch
-        $programs_table = $prefix . 'programs';
-        $programs = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM {$programs_table} WHERE branch_id = %d ORDER BY program_order ASC, id ASC", $branch['id']),
-            ARRAY_A
-        );
+        // Removed: Fetch programs for this branch (programs feature deprecated)
 
         // Build services HTML
         $services_html = '';
@@ -117,45 +112,7 @@ class Church_Branches_Generator_Shortcodes {
             $services_html = '<p>No services scheduled yet.</p>';
         }
 
-        // Build programs HTML
-        $programs_html = '';
-        if (!empty($programs)) {
-            $programs_by_type = array();
-            foreach ($programs as $program) {
-                $type = $program['program_type'];
-                if (!isset($programs_by_type[$type])) {
-                    $programs_by_type[$type] = array();
-                }
-                $programs_by_type[$type][] = $program;
-            }
-
-            foreach ($programs_by_type as $type => $type_programs) {
-                $programs_html .= '<div class="program-type">';
-                $programs_html .= '<h3>' . esc_html(ucfirst($type) . ' Programs') . '</h3>';
-                foreach ($type_programs as $program) {
-                    $programs_html .= '<div class="program-row">';
-                    $programs_html .= '<h4>' . esc_html($program['program_name']) . '</h4>';
-                    $programs_html .= '<p>' . esc_html($program['description']) . '</p>';
-                    if (!empty($program['day_of_week']) || !empty($program['time'])) {
-                        $programs_html .= '<p class="program-time">';
-                        if (!empty($program['day_of_week'])) {
-                            $programs_html .= esc_html($program['day_of_week']);
-                        }
-                        if (!empty($program['time'])) {
-                            $programs_html .= ' – ' . esc_html($program['time']);
-                        }
-                        $programs_html .= '</p>';
-                    }
-                    if (!empty($program['location'])) {
-                        $programs_html .= '<p class="program-location">' . esc_html($program['location']) . '</p>';
-                    }
-                    $programs_html .= '</div>';
-                }
-                $programs_html .= '</div>';
-            }
-        } else {
-            $programs_html = '<p>No programs scheduled yet.</p>';
-        }
+        // Removed: Build programs HTML (programs feature deprecated)
 
         // Build directions popup HTML
         $directions_html = '<div id="branch-directions-popup" class="branch-directions-popup popup-hidden">';
@@ -264,10 +221,6 @@ class Church_Branches_Generator_Shortcodes {
                     {$services_html}
                 </div>
 
-                <div class="programs-card">
-                    <h3>Programs</h3>
-                    {$programs_html}
-                </div>
             </article>
         </div>
     </section>

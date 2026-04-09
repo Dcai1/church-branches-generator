@@ -1,4 +1,4 @@
-This plugin enables administrators to manage church branches and their associated programs and services through a dynamic backend system.
+This plugin enables administrators to manage church branches and their associated services through a dynamic backend system, with support for the Yoruba language. Created specifically for use by the Foundation of the Rock church.
 
 ## What's in this plugin?
 
@@ -9,22 +9,30 @@ This plugin enables administrators to manage church branches and their associate
 - **Edit Branch** functionality with ability to update all fields
 - **All Branches Table** view with management actions
 - **Services Management** per branch with add/edit/delete functionality
-- **Programs Management** per branch with add/edit/delete functionality
 - **Settings Page** to customize brand colors and typography
-
-### Scalability
-
-- Supports unlimited branches
-- Supports unlimited programs per branch
-- Supports unlimited services per branch
-- Efficient database queries with proper indexing
-- No need to hardcode any content on pages
 
 ## Installation
 
 1. **Upload the plugin** to your WordPress site at `/wp-content/plugins/church-branches-generator/`
 2. **Activate the plugin** from WordPress Admin → Plugins
 3. The database tables will be automatically created on activation
+
+### Configuring the Plugin
+
+Once installed, you'll need to configure a couple settings for the plugin to work properly. Don't worry, this is as simple as
+a couple button clicks!
+
+1. Navigate to **Settings**
+   1. If the fields are already populated, skip straight to #6.
+2. Scroll down to **Menu Settings by Language**
+3. On Menu, set the option to your Navigation Bar. Repeat this for the Mobile Menu below.
+   1. This tells the plugin where to automatically save your branches
+4. **"Churches" Menu Item**
+   1. Set the option to your **Churches** page location on your navigation bar.
+5. Scroll down to the **Yoruba** section
+   1. Repeat the same as above, but for the Navigation Bar that appears in Yoruba.
+6. **Save Settings** and close.
+7. You're done!
 
 ## Using the Admin Interface
 
@@ -34,13 +42,13 @@ Once activated, you'll see a new **"Church Branches"** menu in the WordPress Adm
 
 - Overview with total branch count
 - Quick action buttons for common tasks
-- Direct links to create branches, manage programs, and settings
+- Direct links to manage branches and settings
 
 ### 2. **Create Branch**
 
 - Fill in branch information (name, address, contact details)
 - Upload a hero image from your Media Library
-- Add About Us content with the WYSIWYG editor
+- Add About Us content with the built-in editor
 - Add Directions information
 - A page is automatically generated at `/branch-name-branch/`
 
@@ -48,24 +56,16 @@ Once activated, you'll see a new **"Church Branches"** menu in the WordPress Adm
 
 - View all created branches in a table
 - Edit, view, or delete branches
-- Quick links to manage programs and services for each branch
+- Quick links to manage services for each branch
 
-### 4. **Services**
+### 4. **Weekly Services**
 
 - Select a branch from the dropdown
 - Add or edit services (Sunday Service, Prayer Meeting, etc.)
 - Specify day of week and time
 - Delete services individually
 
-### 5. **Programs**
-
-- Select a branch from the dropdown
-- Add or edit programs (Bible Study, Youth Group, etc.)
-- Choose program type (Weekly, Monthly, Special Event)
-- Specify day, time, and location
-- Delete programs individually
-
-### 6. **Settings**
+### 5. **Settings**
 
 - Customize primary color (for buttons)
 - Customize secondary color (for container background)
@@ -81,12 +81,11 @@ Once activated, you'll see a new **"Church Branches"** menu in the WordPress Adm
 
 When you create a branch, a page is automatically created that displays:
 
-- **Hero Section**: Branch name with uploaded background image
+- **Branch Name Section**: Branch name with your chosen media background image
 - **Contact Information**: Address, phone, email, service times, pastor name
-- **About Us Section**: Rich text content
-- **Services & Activities**: Listed services for the branch
-- **Programs Section**: Programs grouped by type (Weekly, Monthly, etc.)
-- **A Call-to-Action Section**: "Visit Us This Sunday" with Get Directions button
+- **About Us**: Rich text content
+- **Weekly Services & Activities**: Listed services for the branch
+- **Call-to-Action Section**: "Visit Us This Sunday" with Get Directions button that opens a pop-up with directions.
 
 ### Shortcode (Advanced)
 
@@ -107,15 +106,6 @@ Where `id` is the branch ID from the database.
 3. Upload a high-quality background image
 4. Click **Create Branch**
 5. A page is instantly created and you can view it
-
-### Adding Programs to a Branch
-
-1. Go to **Church Branches → Programs**
-2. Select the branch from dropdown
-3. Add program name, description, type (weekly/monthly/special)
-4. Specify day and time
-5. Click **Add Program**
-6. The program instantly appears on the branch page
 
 ### Adding Services to a Branch
 
@@ -139,14 +129,14 @@ Where `id` is the branch ID from the database.
 2. Confirm the deletion
 3. The item is instantly removed
 
-**Note:** Deleting a branch will also delete all its associated programs and services.
+**Note:** Deleting a branch will also delete all its associated services.
 
-### Problems Solved
+### Critical Problems Solved
 
 - **Eliminated** Elementor dependency for content updates
-- **Replaced** with dynamic database-driven content
-- **Administrators** manage content through WordPress admin
-- **End users** never need to touch Elementor
+- **Now Replaced** with dynamic database-driven content
+- **Administrators** can now manage content through WordPress admin
+- **End users** will now never need to touch Elementor
 
 ## Features Implemented
 
@@ -155,12 +145,6 @@ Where `id` is the branch ID from the database.
 - Automatic WordPress page generation
 - Create new branches with hero images
 - Edit and delete all branch details
-
-**Program Management**
-
-- Create programs per branch with no limits
-- Categorize programs (Weekly/Monthly/Special)
-- Delete individual programs
 
 **Service Management**
 
@@ -186,7 +170,7 @@ Where `id` is the branch ID from the database.
 
 **Security**
 
-- All inputs are sanitized
+- All inputs are validated and sanitized
 - Nonce-protected forms
 
 ## Troubleshooting

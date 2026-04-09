@@ -59,27 +59,7 @@ class Church_Branches_Generator_Activator {
             dbDelta($sql_services);
         }
 
-        $programs_table = $prefix . CHURCH_BRANCHES_GENERATOR_TABLE_PREFIX . 'programs';
-        if ($wpdb->get_var("SHOW TABLES LIKE '$programs_table'") != $programs_table) {
-            $sql_programs = "CREATE TABLE $programs_table (
-                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-                branch_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
-                program_name VARCHAR(255) NOT NULL,
-                description TEXT NOT NULL,
-                program_type VARCHAR(50) NOT NULL DEFAULT 'weekly',
-                day_of_week VARCHAR(20) NOT NULL DEFAULT '',
-                time VARCHAR(50) NOT NULL DEFAULT '',
-                location VARCHAR(255) NOT NULL DEFAULT '',
-                program_order INT(11) NOT NULL DEFAULT 0,
-                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                PRIMARY KEY (id),
-                KEY idx_branch_id (branch_id),
-                KEY idx_program_type (program_type),
-                KEY idx_program_order (program_order)
-            ) $charset_collate;";
-            dbDelta($sql_programs);
-        }
+            // Removed: programs table creation (programs feature deprecated)
     }
 
     private static function migrate_existing_tables() {

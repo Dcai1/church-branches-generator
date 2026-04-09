@@ -118,40 +118,5 @@ jQuery(document).ready(function ($) {
     });
   });
 
-  // Delete Program
-  $(".cbg-delete-program").on("click", function (e) {
-    e.preventDefault();
-
-    if (!confirm("Are you sure you want to delete this program?")) {
-      return;
-    }
-
-    var $btn = $(this);
-    var programId = $btn.data("program-id");
-    var branchId = $btn.data("branch-id");
-
-    $.ajax({
-      url: cbgAdmin.ajaxurl,
-      type: "POST",
-      data: {
-        action: "cbg_delete_program",
-        nonce: cbgAdmin.nonce,
-        program_id: programId,
-        branch_id: branchId,
-      },
-      success: function (response) {
-        if (response.success) {
-          $btn.closest("tr").fadeOut(300, function () {
-            $(this).remove();
-          });
-          alert("Program deleted successfully.");
-        } else {
-          alert("Error: " + response.data);
-        }
-      },
-      error: function () {
-        alert("Error deleting program");
-      },
-    });
-  });
+  // Removed: Delete Program feature (programs deprecated)
 });

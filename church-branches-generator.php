@@ -35,7 +35,7 @@
     
     require CHURCH_BRANCHES_GENERATOR_PLUGIN_DIR . 'includes/class-plugin.php';
     require CHURCH_BRANCHES_GENERATOR_PLUGIN_DIR . 'includes/class-branch-handler.php';
-    require CHURCH_BRANCHES_GENERATOR_PLUGIN_DIR . 'includes/class-program-handler.php';
+    // require CHURCH_BRANCHES_GENERATOR_PLUGIN_DIR . 'includes/class-program-handler.php'; // Removed: programs feature deprecated
     require CHURCH_BRANCHES_GENERATOR_PLUGIN_DIR . 'includes/class-service-handler.php';
     require CHURCH_BRANCHES_GENERATOR_PLUGIN_DIR . 'includes/class-shortcodes.php';
     require CHURCH_BRANCHES_GENERATOR_PLUGIN_DIR . 'includes/class-menu-handler.php';
@@ -362,9 +362,3 @@ HTML;
         do_action('church_branch_created', $branch_id, $page_id);
     }
 }
-
-// Note to point out: Branch_Creator has been replaced with Church_Branches_Generator_Admin
-// The old Branch_Creator class is kept for reference but is NOT instantiated
-// Instead, the new admin system is loaded via the Church_Branches_Generator_Plugin class
-// if the old Branch_Creator class will never be used, we should delete it
-// new Branch_Creator();

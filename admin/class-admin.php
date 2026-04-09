@@ -4,15 +4,14 @@ class Church_Branches_Generator_Admin {
     private $version;
     private $branch_handler;
     private $service_handler;
-    private $program_handler;
+    // Removed: $program_handler (programs feature deprecated)
 
     public function __construct($plugin_name, $version) {
         $this->plugin_name = $plugin_name;
         $this->version = $version;
         $this->branch_handler = new Church_Branches_Generator_Branch_Handler();
         $this->service_handler = new Church_Branches_Generator_Service_Handler();
-        $this->program_handler = new Church_Branches_Generator_Program_Handler();
-        
+        // Removed: $program_handler (programs feature deprecated)
         $this->init_hooks();
     }
 
@@ -22,10 +21,10 @@ class Church_Branches_Generator_Admin {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
         add_action('wp_ajax_cbg_delete_branch', array($this, 'ajax_delete_branch'));
         add_action('wp_ajax_cbg_delete_service', array($this, 'ajax_delete_service'));
-        add_action('wp_ajax_cbg_delete_program', array($this, 'ajax_delete_program'));
+        // Removed: cbg_delete_program, cbg_get_program (programs feature deprecated)
         add_action('wp_ajax_cbg_get_menu_items', array($this, 'ajax_get_menu_items'));
         add_action('wp_ajax_cbg_get_service', array($this, 'ajax_get_service'));
-        add_action('wp_ajax_cbg_get_program', array($this, 'ajax_get_program'));
+        // Removed: cbg_get_program (programs feature deprecated)
     }
 
     public function enqueue_styles($hook) {
@@ -86,21 +85,14 @@ class Church_Branches_Generator_Admin {
 
         add_submenu_page(
             'church-branches',
-            'Services',
-            'Services',
+            'Weekly Services',
+            'Weekly Services',
             'manage_options',
             'church-branches-services',
             array($this, 'render_services_list')
         );
 
-        add_submenu_page(
-            'church-branches',
-            'Programs',
-            'Programs',
-            'manage_options',
-            'church-branches-programs',
-            array($this, 'render_programs_list')
-        );
+        // Removed: Programs submenu (programs feature deprecated)
 
         add_submenu_page(
             'church-branches',
@@ -125,14 +117,10 @@ class Church_Branches_Generator_Admin {
                 </div>
                 <div class="dashboard-card" style="border: 1px solid #ddd; padding: 20px; border-radius: 5px;">
                     <h3>Create New Branch</h3>
-                    <p>Add a new branch to your network</p>
+                    <p>Add a new branch to your website</p>
                     <a href="?page=church-branches-create" class="button button-primary">Create Branch</a>
                 </div>
-                <div class="dashboard-card" style="border: 1px solid #ddd; padding: 20px; border-radius: 5px;">
-                    <h3>Manage Programs</h3>
-                    <p>Add programs and activities</p>
-                    <a href="?page=church-branches-programs" class="button button-secondary">Manage Programs</a>
-                </div>
+                <!-- Removed: Manage Programs card (programs feature deprecated) -->
                 <div class="dashboard-card" style="border: 1px solid #ddd; padding: 20px; border-radius: 5px;">
                     <h3>Plugin Settings</h3>
                     <p>Configure plugin options</p>
@@ -281,6 +269,11 @@ class Church_Branches_Generator_Admin {
         wp_enqueue_media();
     }
 
+/**
+ * Process branch form data and create or update a branch.
+ *
+ * @param int $edit_id The ID of the branch to update, or 0 if creating a new branch.
+ */
     private function process_branch_form($edit_id = 0) {
         $branch_name   = sanitize_text_field($_POST['branch_name']);
         $address       = sanitize_text_field($_POST['address']);
@@ -315,6 +308,10 @@ class Church_Branches_Generator_Admin {
                 return;
             }
 
+            // Get old branch name BEFORE update for menu matching
+            $old_branch_data = $this->branch_handler->get_branch_by_page_id($edit_id);
+            $old_branch_name = $old_branch_data ? $old_branch_data['branch_name'] : '';
+
             $branch_data = $this->branch_handler->get_branch_by_page_id($edit_id);
             if ($branch_data) {
                 $result = $this->branch_handler->update_branch($branch_data['id'], array(
@@ -337,6 +334,9 @@ class Church_Branches_Generator_Admin {
             }
 
             update_post_meta($edit_id, '_br_hero_id', $attachment_id);
+            if ($branch_data) {
+                $this->update_branch_menu_items($branch_data['id'], $branch_name, $edit_id, $language, $old_branch_name);
+            }
 
             echo '<div class="notice notice-success is-dismissible"><p>Branch updated successfully!</p></div>';
         } else {
@@ -445,8 +445,8 @@ class Church_Branches_Generator_Admin {
                             'menu-item-parent-id' => $churches_menu_item_id,
                             'menu-item-classes' => 'cbg-branch-item cbg-lang-' . $language,
                         ));
-                        
                         if (!is_wp_error($item_id) && $item_id > 0) {
+                            update_post_meta($item_id, '_cbg_branch_id', $branch_id);
                             $messages[] = 'Added to ' . esc_html(ucfirst($language)) . ' menu';
                         }
                     } else {
@@ -489,8 +489,8 @@ class Church_Branches_Generator_Admin {
                             'menu-item-parent-id' => $mobile_churches_item_id,
                             'menu-item-classes' => 'cbg-branch-item cbg-lang-' . $language . ' cbg-mobile',
                         ));
-                        
                         if (!is_wp_error($mobile_item_id) && $mobile_item_id > 0) {
+                            update_post_meta($mobile_item_id, '_cbg_branch_id', $branch_id);
                             $messages[] = 'Added to ' . esc_html(ucfirst($language)) . ' mobile menu';
                         }
                     } else {
@@ -505,6 +505,98 @@ class Church_Branches_Generator_Admin {
         }
         
         return '<em>(' . implode(', ', $messages) . ')</em>';
+    }
+
+    /**
+     * Update menu items for a given branch with the new branch name and URL.
+     *
+     * @param int $branch_id The ID of the branch to update.
+     * @param string $branch_name The new name of the branch.
+     * @param int $page_id The ID of the page associated with the branch.
+     * @param string $language The language of the branch (e.g. 'english').
+     *
+     * @return bool True if any menu items were updated, false otherwise.
+     */
+    private function update_branch_menu_items($branch_id, $new_branch_name, $page_id, $language, $old_branch_name = '') {
+        $new_branch_url = get_permalink($page_id);
+        if (empty($new_branch_url) || $new_branch_url === home_url('/')) {
+            return false;
+        }
+
+        // Calculate old page slug for URL matching fallback
+        $old_branch_slug = !empty($old_branch_name)
+            ? sanitize_title($old_branch_name) . '-branch'
+            : sanitize_title($new_branch_name) . '-branch';
+
+        $menus = wp_get_nav_menus(array('orderby' => 'name'));
+        $updated = false;
+
+        foreach ($menus as $menu) {
+            $menu_items = wp_get_nav_menu_items($menu->term_id);
+            if (!$menu_items) {
+                continue;
+            }
+
+            foreach ($menu_items as $item) {
+                $should_update = false;
+                $item_branch_id = get_post_meta($item->db_id, '_cbg_branch_id', true);
+                if (!empty($item_branch_id) && intval($item_branch_id) === intval($branch_id)) {
+                    $should_update = true;
+                }
+                if (!$should_update && isset($item->classes) && in_array('cbg-branch-item', (array) $item->classes, true)) {
+                    if (!empty($item->object_id) && intval($item->object_id) === intval($branch_id)) {
+                        $should_update = true;
+                    }
+                }
+                if (!$should_update && isset($item->classes) && in_array('cbg-branch-item', (array) $item->classes, true)) {
+                    $site_url = home_url('/');
+                    if (strpos($item->url, $site_url) === 0 && !empty($old_branch_slug)) {
+                        if (strpos($item->url, $old_branch_slug) !== false) {
+                            $should_update = true;
+                        }
+                    }
+                }
+                if (!$should_update && isset($item->title) && isset($item->url)) {
+                    $title_match = false;
+                    if (!empty($old_branch_name)) {
+                        // check if title contains old branch name
+                        if (stripos($item->title, $old_branch_name) !== false ||
+                            stripos($item->title, $old_branch_slug) !== false) {
+                            $title_match = true;
+                        }
+                    }
+                    $site_url = home_url('/');
+                    if ($title_match && strpos($item->url, $site_url) === 0 && !empty($old_branch_slug)) {
+                        if (strpos($item->url, $old_branch_slug) !== false) {
+                            $should_update = true;
+                        }
+                    }
+                }
+                if ($should_update) {
+                    $classes = array_filter((array) $item->classes);
+                    $classes = array_values(array_filter($classes, function ($class) {
+                        return strpos($class, 'cbg-lang-') !== 0;
+                    }));
+                    $classes[] = 'cbg-branch-item';
+                    $classes[] = 'cbg-lang-' . sanitize_html_class($language);
+                    if (in_array('cbg-mobile', (array) $item->classes, true)) {
+                        $classes[] = 'cbg-mobile';
+                    }
+                    $result = wp_update_nav_menu_item($menu->term_id, $item->db_id, array(
+                        'menu-item-title'     => $new_branch_name . ' Branch',
+                        'menu-item-url'       => $new_branch_url,
+                        'menu-item-status'    => 'publish',
+                        'menu-item-classes'   => implode(' ', array_unique($classes)),
+                        'menu-item-parent-id' => intval($item->menu_item_parent),
+                    ));
+                    if (!is_wp_error($result)) {
+                        update_post_meta($item->db_id, '_cbg_branch_id', $branch_id);
+                        $updated = true;
+                    }
+                }
+            }
+        }
+        return $updated;
     }
 
     public function render_branches_list() {
@@ -534,7 +626,7 @@ class Church_Branches_Generator_Admin {
                                 <td><?php echo esc_html($branch['phone']); ?></td>
                                 <td>
                                     <a href="?page=church-branches-create&edit_id=<?php echo intval($branch['page_id']); ?>" class="button button-small">Edit</a>
-                                    <a href="?page=church-branches-programs&branch_id=<?php echo intval($branch['id']); ?>" class="button button-small">Programs</a>
+                                    <!-- Removed: Programs button (programs feature deprecated) -->
                                     <a href="?page=church-branches-services&branch_id=<?php echo intval($branch['id']); ?>" class="button button-small">Services</a>
                                     <a href="<?php echo esc_url(get_permalink($branch['page_id'])); ?>" class="button button-small" target="_blank">View</a>
                                     <button class="button button-small button-link-delete cbg-delete-branch" data-branch-id="<?php echo intval($branch['id']); ?>" data-page-id="<?php echo intval($branch['page_id']); ?>">Delete</button>
@@ -543,7 +635,7 @@ class Church_Branches_Generator_Admin {
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4">No branches found. <a href="?page=church-branches-create">Create one now</a></td>
+                            <td colspan="4">No branches found. <a href="?page=church-branches-create">Create one now!</a></td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -702,179 +794,8 @@ class Church_Branches_Generator_Admin {
         }
     }
 
-    public function render_programs_list() {
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized');
-        }
+    // Removed: render_programs_list and all related logic (programs feature deprecated)
 
-        $branch_id = isset($_GET['branch_id']) ? intval($_GET['branch_id']) : 0;
-        $branches = $this->branch_handler->get_all_branches();
-
-        if (!$branch_id && !empty($branches)) {
-            $branch_id = $branches[0]['id'];
-        }
-
-        $programs = $branch_id ? $this->program_handler->get_programs_by_branch($branch_id) : array();
-
-        $edit_program_id = isset($_GET['edit_program']) ? intval($_GET['edit_program']) : 0;
-        $edit_program = $edit_program_id ? $this->program_handler->get_program($edit_program_id) : null;
-
-        if (isset($_POST['cbg_save_program']) && wp_verify_nonce($_POST['cbg_nonce'], 'cbg_save_program_nonce')) {
-            $this->process_program_form($branch_id);
-        }
-
-        ?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-
-            <div style="margin-bottom: 20px;">
-                <label for="branch_select">Select Branch:</label>
-                <select id="branch_select" onchange="window.location = '?page=church-branches-programs&branch_id=' + this.value;">
-                    <?php foreach ($branches as $branch): ?>
-                        <option value="<?php echo intval($branch['id']); ?>" <?php selected($branch_id, $branch['id']); ?>><?php echo esc_html($branch['branch_name']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-
-            <?php if ($branch_id): ?>
-                <form method="post" class="cbg-program-form" id="cbg-program-form" style="background: #f1f1f1; padding: 20px; margin-bottom: 30px; border-radius: 5px;">
-                    <?php wp_nonce_field('cbg_save_program_nonce', 'cbg_nonce'); ?>
-                    <input type="hidden" name="branch_id" value="<?php echo intval($branch_id); ?>">
-                    <input type="hidden" name="edit_program_id" id="edit_program_id" value="<?php echo intval($edit_program_id); ?>">
-                    
-                    <h2 id="program-form-title"><?php echo $edit_program ? 'Edit Program' : 'Add Program'; ?></h2>
-                    <table class="form-table">
-                        <tr>
-                            <th scope="row"><label for="program_name">Program Name</label></th>
-                            <td><input name="program_name" id="program_name" type="text" class="regular-text" placeholder="e.g. Bible Study" required value="<?php echo $edit_program ? esc_attr($edit_program['program_name']) : ''; ?>"></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="program_desc">Description</label></th>
-                            <td><textarea name="program_desc" id="program_desc" class="large-text" placeholder="Program details"><?php echo $edit_program ? esc_textarea($edit_program['description']) : ''; ?></textarea></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="program_type">Type</label></th>
-                            <td>
-                                <select name="program_type" id="program_type">
-                                    <option value="weekly" <?php selected($edit_program ? $edit_program['program_type'] : '', 'weekly'); ?>>Weekly</option>
-                                    <option value="monthly" <?php selected($edit_program ? $edit_program['program_type'] : '', 'monthly'); ?>>Monthly</option>
-                                    <option value="special" <?php selected($edit_program ? $edit_program['program_type'] : '', 'special'); ?>>Special Event</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="program_day">Day of Week</label></th>
-                            <td>
-                                <select name="program_day" id="program_day">
-                                    <option value="">Select a day</option>
-                                    <option value="Monday" <?php selected($edit_program ? $edit_program['day_of_week'] : '', 'Monday'); ?>>Monday</option>
-                                    <option value="Tuesday" <?php selected($edit_program ? $edit_program['day_of_week'] : '', 'Tuesday'); ?>>Tuesday</option>
-                                    <option value="Wednesday" <?php selected($edit_program ? $edit_program['day_of_week'] : '', 'Wednesday'); ?>>Wednesday</option>
-                                    <option value="Thursday" <?php selected($edit_program ? $edit_program['day_of_week'] : '', 'Thursday'); ?>>Thursday</option>
-                                    <option value="Friday" <?php selected($edit_program ? $edit_program['day_of_week'] : '', 'Friday'); ?>>Friday</option>
-                                    <option value="Saturday" <?php selected($edit_program ? $edit_program['day_of_week'] : '', 'Saturday'); ?>>Saturday</option>
-                                    <option value="Sunday" <?php selected($edit_program ? $edit_program['day_of_week'] : '', 'Sunday'); ?>>Sunday</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="program_time">Time</label></th>
-                            <td><input name="program_time" id="program_time" type="text" class="regular-text" placeholder="e.g. 6:00 PM" value="<?php echo $edit_program ? esc_attr($edit_program['time']) : ''; ?>"></td>
-                        </tr>
-                        <tr>
-                            <th scope="row"><label for="program_location">Location</label></th>
-                            <td><input name="program_location" id="program_location" type="text" class="regular-text" placeholder="e.g. Main Hall" value="<?php echo $edit_program ? esc_attr($edit_program['location']) : ''; ?>"></td>
-                        </tr>
-                    </table>
-                    <?php submit_button($edit_program ? 'Update Program' : 'Add Program', 'primary', 'cbg_save_program'); ?>
-                    <?php if ($edit_program): ?>
-                        <a href="?page=church-branches-programs&branch_id=<?php echo intval($branch_id); ?>" class="button">Cancel Edit</a>
-                    <?php endif; ?>
-                </form>
-
-                <h2>Programs for this Branch</h2>
-                <table class="wp-list-table widefat fixed striped">
-                    <thead>
-                        <tr>
-                            <th>Program Name</th>
-                            <th>Description</th>
-                            <th>Type</th>
-                            <th>Day</th>
-                            <th>Time</th>
-                            <th>Location</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($programs)): ?>
-                            <?php foreach ($programs as $program): ?>
-                                <tr>
-                                    <td><strong><?php echo esc_html($program['program_name']); ?></strong></td>
-                                    <td><?php echo wp_kses_post($program['description']); ?></td>
-                                    <td><?php echo esc_html(ucfirst($program['program_type'])); ?></td>
-                                    <td><?php echo esc_html($program['day_of_week']); ?></td>
-                                    <td><?php echo esc_html($program['time']); ?></td>
-                                    <td><?php echo esc_html($program['location']); ?></td>
-                                    <td>
-                                        <a href="?page=church-branches-programs&branch_id=<?php echo intval($branch_id); ?>&edit_program=<?php echo intval($program['id']); ?>" class="button button-small">Edit</a>
-                                        <button class="button button-small button-link-delete cbg-delete-program" data-program-id="<?php echo intval($program['id']); ?>" data-branch-id="<?php echo intval($branch_id); ?>">Delete</button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="7">No programs found for this branch.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
-        <?php
-    }
-
-    private function process_program_form($branch_id) {
-        $edit_id = intval($_POST['edit_program_id'] ?? 0);
-        $program_name = sanitize_text_field($_POST['program_name']);
-        $program_desc = wp_kses_post($_POST['program_desc'] ?? '');
-        $program_type = sanitize_text_field($_POST['program_type']);
-        $program_day = sanitize_text_field($_POST['program_day'] ?? '');
-        $program_time = sanitize_text_field($_POST['program_time'] ?? '');
-        $program_location = sanitize_text_field($_POST['program_location'] ?? '');
-
-        if ($edit_id > 0) {
-            $result = $this->program_handler->update_program($edit_id, array(
-                'program_name' => $program_name,
-                'description'  => $program_desc,
-                'program_type' => $program_type,
-                'day_of_week'  => $program_day,
-                'time'         => $program_time,
-                'location'     => $program_location,
-            ));
-
-            if (is_wp_error($result)) {
-                echo '<div class="notice notice-error"><p>Error updating program.</p></div>';
-            } else {
-                echo '<div class="notice notice-success is-dismissible"><p>Program updated successfully!</p></div>';
-            }
-        } else {
-            $result = $this->program_handler->create_program(array(
-                'branch_id'    => $branch_id,
-                'program_name' => $program_name,
-                'description'  => $program_desc,
-                'program_type' => $program_type,
-                'day_of_week'  => $program_day,
-                'time'         => $program_time,
-                'location'     => $program_location,
-            ));
-
-            if (is_wp_error($result)) {
-                echo '<div class="notice notice-error"><p>Error creating program.</p></div>';
-            } else {
-                echo '<div class="notice notice-success is-dismissible"><p>Program added successfully!</p></div>';
-            }
-        }
-    }
 
     public function render_settings() {
         if (!current_user_can('manage_options')) {
@@ -924,7 +845,7 @@ class Church_Branches_Generator_Admin {
                         <th scope="row"><label for="secondary_color">Secondary Color</label></th>
                         <td>
                             <input name="secondary_color" id="secondary_color" type="color" value="<?php echo esc_attr($secondary_color); ?>" class="color-field">
-                            <p class="description">Used for secondary elements</p>
+                            <p class="description">Used for boxes and cards (Weekly services...)</p>
                         </td>
                     </tr>
                     <tr>
@@ -932,17 +853,17 @@ class Church_Branches_Generator_Admin {
                         <th scope="row"><label for="title_font_family">Title Font</label></th>
                         <td>
                             <select name="title_font_family" id="title_font_family" style="margin-right: 10px;">
-                                <option value="Inter, sans-serif" <?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), 'Inter, sans-serif'); ?>>Inter</option>
-                                <option value="Arial, sans-serif" <?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), 'Arial, sans-serif'); ?>>Arial</option>
-                                <option value="Georgia, serif" <?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), 'Georgia, serif'); ?>>Georgia</option>
-                                <option value="'Trebuchet MS', sans-serif" <?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), "'Trebuchet MS', sans-serif"); ?>>Trebuchet MS</option>
-                                <option value="'Times New Roman', serif" <?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), "'Times New Roman', serif"); ?>>Times New Roman</option>
+                                <option value="Inter, sans-serif" style="font-family: Inter, sans-serif;"<?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), 'Inter, sans-serif'); ?>>Inter</option>
+                                <option value="Arial, sans-serif" style="font-family: Arial, sans-serif;"<?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), 'Arial, sans-serif'); ?>>Arial</option>
+                                <option value="Georgia, serif" style="font-family: Georgia, serif";<?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), 'Georgia, serif'); ?>>Georgia</option>
+                                <option value="'Trebuchet MS', sans-serif" style="font-family: 'Trebuchet MS', sans-serif;"<?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), "'Trebuchet MS', sans-serif"); ?>>Trebuchet MS</option>
+                                <option value="'Times New Roman', serif" style="'TImes New Roman', serif" <?php selected(get_option('cbg_title_font_family', 'Inter, sans-serif'), "'Times New Roman', serif"); ?>>Times New Roman</option>
                             </select>
                             <select name="title_font_weight" id="title_font_weight">
-                                <option value="400" <?php selected(get_option('cbg_title_font_weight', '700'), '400'); ?>>Regular (400)</option>
-                                <option value="500" <?php selected(get_option('cbg_title_font_weight', '700'), '500'); ?>>Medium (500)</option>
-                                <option value="600" <?php selected(get_option('cbg_title_font_weight', '700'), '600'); ?>>Semibold (600)</option>
-                                <option value="700" <?php selected(get_option('cbg_title_font_weight', '700'), '700'); ?>>Bold (700)</option>
+                                <option value="400" style="font-weight: 400;" <?php selected(get_option('cbg_title_font_weight', '700'), '400'); ?>>Regular (400)</option>
+                                <option value="500" style="font-weight: 500;" <?php selected(get_option('cbg_title_font_weight', '700'), '500'); ?>>Medium (500)</option>
+                                <option value="600" style="font-weight: 600;" <?php selected(get_option('cbg_title_font_weight', '700'), '600'); ?>>Semibold (600)</option>
+                                <option value="700" style="font-weight: 700;" <?php selected(get_option('cbg_title_font_weight', '700'), '700'); ?>>Bold (700)</option>
                             </select>
                             <p class="description">Font for headings and titles.</p>
                         </td>
@@ -951,17 +872,17 @@ class Church_Branches_Generator_Admin {
                         <th scope="row"><label for="body_font_family">Body Font</label></th>
                         <td>
                             <select name="body_font_family" id="body_font_family" style="margin-right: 10px;">
-                                <option value="Inter, sans-serif" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), 'Inter, sans-serif'); ?>>Inter</option>
-                                <option value="Arial, sans-serif" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), 'Arial, sans-serif'); ?>>Arial</option>
-                                <option value="Georgia, serif" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), 'Georgia, serif'); ?>>Georgia</option>
-                                <option value="'Trebuchet MS', sans-serif" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), "'Trebuchet MS', sans-serif"); ?>>Trebuchet MS</option>
-                                <option value="'Times New Roman', serif" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), "'Times New Roman', serif"); ?>>Times New Roman</option>
+                                <option value="Inter, sans-serif" style="font-family: Inter, sans-serif;" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), 'Inter, sans-serif'); ?>>Inter</option>
+                                <option value="Arial, sans-serif" style="font-family: Arial, sans-serif;" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), 'Arial, sans-serif'); ?>>Arial</option>
+                                <option value="Georgia, serif" style="font-family: 'Georgia';" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), 'Georgia, serif'); ?>>Georgia</option>
+                                <option value="'Trebuchet MS', sans-serif" style="font-family: 'Trebuchet MS';" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), "'Trebuchet MS', sans-serif"); ?>>Trebuchet MS</option>
+                                <option value="'Times New Roman', serif" style="font-family: 'Times New Roman';" <?php selected(get_option('cbg_body_font_family', 'Inter, sans-serif'), "'Times New Roman', serif"); ?>>Times New Roman</option>
                             </select>
                             <select name="body_font_weight" id="body_font_weight">
-                                <option value="300" <?php selected(get_option('cbg_body_font_weight', '400'), '300'); ?>>Light (300)</option>
-                                <option value="400" <?php selected(get_option('cbg_body_font_weight', '400'), '400'); ?>>Regular (400)</option>
-                                <option value="500" <?php selected(get_option('cbg_body_font_weight', '400'), '500'); ?>>Medium (500)</option>
-                                <option value="600" <?php selected(get_option('cbg_body_font_weight', '400'), '600'); ?>>Semibold (600)</option>
+                                <option value="300" style="font-weight: 300;" <?php selected(get_option('cbg_body_font_weight', '400'), '300'); ?>>Light (300)</option>
+                                <option value="400" style="font-weight: 400;" <?php selected(get_option('cbg_body_font_weight', '400'), '400'); ?>>Regular (400)</option>
+                                <option value="500" style="font-weight: 500;" <?php selected(get_option('cbg_body_font_weight', '400'), '500'); ?>>Medium (500)</option>
+                                <option value="600" style="font-weight: 600;" <?php selected(get_option('cbg_body_font_weight', '400'), '600'); ?>>Semibold (600)</option>
                             </select>
                             <p class="description">Font for body text.</p>
                         </td>
@@ -1176,8 +1097,7 @@ class Church_Branches_Generator_Admin {
         $branch_id = intval($_POST['branch_id']);
         $page_id = intval($_POST['page_id']);
 
-        // Delete associated programs and services
-        $this->program_handler->delete_programs_by_branch($branch_id);
+        // Delete associated services only (programs feature deprecated)
         $this->service_handler->delete_services_by_branch($branch_id);
 
         // Remove branch from all menus
@@ -1232,23 +1152,7 @@ class Church_Branches_Generator_Admin {
         wp_send_json_success('Service deleted successfully');
     }
 
-    public function ajax_delete_program() {
-        check_ajax_referer('cbg-admin-nonce', 'nonce');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
-
-        $program_id = intval($_POST['program_id']);
-
-        $result = $this->program_handler->delete_program($program_id);
-
-        if (is_wp_error($result)) {
-            wp_send_json_error('Failed to delete program');
-        }
-
-        wp_send_json_success('Program deleted successfully');
-    }
+    // Removed: ajax_delete_program (programs feature deprecated)
 
     public function ajax_get_service() {
         check_ajax_referer('cbg-admin-nonce', 'nonce');
@@ -1267,20 +1171,5 @@ class Church_Branches_Generator_Admin {
         wp_send_json_success($service);
     }
 
-    public function ajax_get_program() {
-        check_ajax_referer('cbg-admin-nonce', 'nonce');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error('Unauthorized');
-        }
-
-        $program_id = intval($_POST['program_id']);
-        $program = $this->program_handler->get_program($program_id);
-
-        if (!$program) {
-            wp_send_json_error('Program not found');
-        }
-
-        wp_send_json_success($program);
-    }
+    // Removed: ajax_get_program (programs feature deprecated)
 }
